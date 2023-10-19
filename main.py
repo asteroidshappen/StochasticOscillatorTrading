@@ -25,6 +25,12 @@ def moving_average_market_rate(rates, n_avg=3):
 
 def plot_market_rate(ticker, period):
     history = ticker.history(period=period)
+    name = ticker.info["shortName"]
+    shorthand = ticker.info["symbol"]
+
+    for item in ticker.info.items():
+        print(item)
+
     currency = ticker.info["currency"]
 
     dates = history.index
@@ -36,7 +42,6 @@ def plot_market_rate(ticker, period):
 
     open_to_close_growth = close_rate - open_rate
     net_change = close_rate - close_rate.shift(-1)
-    print(net_change)
 
     mpl.use('MacOSX')
     fig, ax = plt.subplots(
@@ -64,6 +69,8 @@ def plot_market_rate(ticker, period):
     ax[2].axhline(0, color='xkcd:dark pink', ls='--')
 
     # cosmetics
+    fig.suptitle(f"{name} ({shorthand})")
+
     ax[0].legend()
 
     ax[0].set_ylabel(f"Rates ({currency})")
