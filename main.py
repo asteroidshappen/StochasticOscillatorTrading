@@ -93,7 +93,8 @@ def oscillator_buy_sell(ticker, period):
 
 
     fig.suptitle(f"{name} ({shorthand})")
-    ax[0].set_ylabel(f"Market rate ({currency})")
+    ax[0].set_ylabel(f"Market rate (percent)")
+    ax[1].set_ylabel("Buy or sell")
 
     ax[-1].set_xlabel("Date")
 
