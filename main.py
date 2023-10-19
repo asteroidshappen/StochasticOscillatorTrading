@@ -56,7 +56,8 @@ def crossing_down_or_up(rates_1, rates_2):
 
 
 
-def oscillator_buy_sell(ticker, period):
+def oscillator_buy_sell(ticker, period, buy_boundary=20, sell_boundary=80):
+    # read data
     history = ticker.history(period=period)
     name = ticker.info["shortName"]
     shorthand = ticker.info["symbol"]
@@ -66,6 +67,7 @@ def oscillator_buy_sell(ticker, period):
     rates = history["Close"]
     dates = rates.index
 
+    # some rolling summary statistics
     min_recent = min_Ndays(rates)
     max_recent = max_Ndays(rates)
 
@@ -74,8 +76,32 @@ def oscillator_buy_sell(ticker, period):
 
     crossing_market_rates = crossing_down_or_up(current_market_rates, moving_avg_current_market_rates)
 
+    # combine statistics into a sell and a buy signal
+    sell_signal = crossing_market_rates.where(
+        cond=((crossing_market_rates == 1) & (current_market_rates > sell_boundary)),
+        other=0,
+    )
+    sell_signal = sell_signal.where(
+        cond=(np.invert(np.isnan(crossing_market_rates))),
+    )
+
+    buy_signal = crossing_market_rates.where(
+        cond=((crossing_market_rates == -1) & (current_market_rates < buy_boundary)),
+        other=0,
+    )
+
+    print(buy_signal)
 
 
+    buy_signal = buy_signal.where(
+        cond=(np.isfinite(crossing_market_rates)),
+    )
+
+    # combine sell and buy signal
+    sell_buy_signal = sell_signal + buy_signal
+    sell_buy_signal = sell_signal + buy_signal
+
+    # plotting
     mpl.use('MacOSX')
     fig, ax = plt.subplots(
         2, 1,
@@ -86,15 +112,27 @@ def oscillator_buy_sell(ticker, period):
     )
 
 
-    ax[0].plot(dates, moving_avg_current_market_rates, color='xkcd:light orange')
-    ax[0].plot(dates, current_market_rates, color='xkcd:orange')
+    # rates / indexes
+    ax[0].axhline(sell_boundary, ls='--', color='xkcd:light orange', alpha=0.5)
+    ax[0].axhline(buy_boundary, ls='--', color='xkcd:light orange', alpha=0.5)
 
-    ax[1].plot(dates, crossing_market_rates, color='xkcd:orange')
+    ax[0].plot(dates, moving_avg_current_market_rates, color='xkcd:light orange', label='Slow stochastic indicator D')
+    ax[0].plot(dates, current_market_rates, color='xkcd:orange', label='Fast stochastic indicator K')
+
+    # indicators (crossing, buy/sell)
+    ax[1].plot(dates, crossing_market_rates, color='xkcd:light orange', alpha=0.5)
+    ax[1].plot(dates, sell_buy_signal, color='xkcd:orange')
 
 
+    # cosmetics
     fig.suptitle(f"{name} ({shorthand})")
-    ax[0].set_ylabel(f"Market rate (percent)")
-    ax[1].set_ylabel("Buy or sell")
+
+    ax[0].legend(reverse=True)
+
+    ax[1].set_yticks(ticks=[-1, 0, 1], labels=['buy', '', 'sell'])
+
+    ax[0].set_ylabel(f"Indicators (percent)")
+    ax[1].set_ylabel("Signals")
 
     ax[-1].set_xlabel("Date")
 
