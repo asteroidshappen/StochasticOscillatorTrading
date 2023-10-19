@@ -35,13 +35,16 @@ def plot_market_rate(ticker, period):
     low_rate = history["Low"]
 
     open_to_close_growth = close_rate - open_rate
+    net_change = close_rate - close_rate.shift(-1)
+    print(net_change)
 
     mpl.use('MacOSX')
     fig, ax = plt.subplots(
-        2, 1,
+        3, 1,
         figsize=(9, 9),
+        height_ratios=(2, 1, 1),
         layout='constrained',
-        sharex=True
+        sharex=True,
     )
 
     # rates in upper subplot
@@ -55,13 +58,19 @@ def plot_market_rate(ticker, period):
     # ax[1].plot(dates, open_to_close_growth, color='xkcd:pink')
     ax[1].axhline(0, color='xkcd:dark pink', ls='--')
 
+    # net change (closing rate - closing rate previous day)
+    netchange_colors = np.where((net_change > 0), 'xkcd:pink', 'xkcd:light pink')
+    ax[2].bar(dates, net_change, color=netchange_colors)
+    ax[2].axhline(0, color='xkcd:dark pink', ls='--')
+
     # cosmetics
     ax[0].legend()
 
     ax[0].set_ylabel(f"Rates ({currency})")
     ax[1].set_ylabel(f"Daily growth ({currency})")
+    ax[2].set_ylabel(f"Net change ({currency})")
 
-    ax[1].set_xlabel("Date")
+    ax[-1].set_xlabel("Date")
 
     fig.savefig("plots/marketrates.png", dpi=300)
 
